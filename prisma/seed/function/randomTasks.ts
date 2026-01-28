@@ -7,7 +7,7 @@ export async function randomTasks(count: number) {
     tasks.push({
       title: faker.company.name(),
       description: faker.company.catchPhrase(),
-      Status: faker.helpers.arrayElement(Object.values(Status)),
+      status: faker.helpers.arrayElement(Object.values(Status)),
       userId: 'user',
     });
   }

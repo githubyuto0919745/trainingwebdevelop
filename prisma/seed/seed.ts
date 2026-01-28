@@ -17,8 +17,6 @@ export const options = defineOptions({
   },
 });
 
-export const randomoptions = defineOptions({});
-
 export async function seed(args?: SeedArguments) {
   await seedDelete();
   await createUsers();

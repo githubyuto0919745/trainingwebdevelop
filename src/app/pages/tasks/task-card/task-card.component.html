@@ -1,4 +1,12 @@
 <mat-card appearance="raised">
+  <section>
+    @for (task of taskResource.value()?.data; track task.id) {
+      <app-task-card
+        [initialTaskValue]="task"
+        (taskDeleted)="deleteTask()"></app-task-card>
+    }
+  </section>
+
   @if (editMode()) {
     <mat-card-content>
       <mat-form-field>
@@ -47,8 +55,8 @@
     </mat-card-content>
 
     <mat-card-actions>
-      @if (taskCardState.value()?.completedAt) {
-        <p>Completed: {{ taskCardState.value()?.completedAt | date }}</p>
+      @if (taskCardState.value()?.completedDate) {
+        <p>Completed: {{ taskCardState.value()?.completedDate | date }}</p>
       }
       @if (deleteResource.error()) {
         <p class="error">Failed to delete task, try again</p>

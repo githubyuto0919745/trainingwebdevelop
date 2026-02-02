@@ -36,7 +36,7 @@ import { StatusMenuComponent } from '../status-menu/status-menu.component';
   templateUrl: './task-card.component.html',
   styleUrl: './task-card.component.scss',
 })
-export class TaskCardComponent {
+export class TasksCardComponent {
   private readonly trpc = inject(TRPC_CLIENT);
   private readonly confirmation = inject(ConfirmationDialog);
 
@@ -66,6 +66,7 @@ export class TaskCardComponent {
       // taskId: '-1', // test error responses
     })
   );
+  taskResource: any;
 
   constructor() {
     effect(() => {

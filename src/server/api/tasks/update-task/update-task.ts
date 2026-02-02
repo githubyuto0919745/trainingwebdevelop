@@ -1,44 +1,61 @@
-import { z } from 'zod';
-import { authorizedProcedure } from '../../trpc';
-import { prisma, Status } from '../../../../../prisma/server';
+import z from 'zod';
+import { authenticatedProcedure } from '../../trpc';
 import { rethrowKnownPrismaError } from '@fhss-web-team/backend-utils';
+import { prisma, Status } from '../../../../../prisma/server';
 
 const updateTaskInput = z.object({
-  title: z.string(),
-  description: z.string(),
-  status: z.enum(Status),
-  id: z.string(),
+  taskId: z.string(),
+  newTitle: z.optional(z.string()),
+  newDescription: z.optional(z.string()),
+  newStatus: z.optional(z.literal(Object.values(Status))),
 });
 
-const updateTaskOutput = z.void();
+const updateTaskOutput = z.object({
+  status: z.literal(Object.values(Status)),
+  id: z.string(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+  title: z.string(),
+  description: z.string(),
+  completedDate: z.nullable(z.date()),
+  userId: z.string(),
+});
 
-export const updateTask = authorizedProcedure
+export const updateTask = authenticatedProcedure
   .meta({ requiredPermissions: ['manage-tasks'] })
   .input(updateTaskInput)
   .output(updateTaskOutput)
   .mutation(async opts => {
-    const { id, title, description, status } = opts.input;
-
     try {
       const oldTask = await prisma.task.findUniqueOrThrow({
-        where: {
-          id,
-          userId: opts.ctx.userId,
-        },
+        where: { id: opts.input.taskId, userId: opts.ctx.userId },
       });
 
-      await prisma.task.update({
+      //calculate completedAt date based on status changes
+      let calculatedCompletedAt: Date | null = oldTask.completedDate;
+      if (opts.input.newStatus) {
+        if (opts.input.newStatus != oldTask.status) {
+          //if we just switched the task to complete
+          if (opts.input.newStatus === 'Complete') {
+            calculatedCompletedAt = new Date();
+          }
+          //if we just switched the task off complete
+          else if (oldTask.status === 'Complete') {
+            calculatedCompletedAt = null;
+          }
+        }
+      }
+
+      return await prisma.task.update({
         where: {
-          id,
+          id: oldTask.id,
+          userId: opts.ctx.userId,
         },
         data: {
-          title,
-          description,
-          status,
-          completedDate:
-            status !== oldTask.status && status === 'Complete'
-              ? new Date()
-              : null,
+          title: opts.input.newTitle?.trim(),
+          description: opts.input.newDescription,
+          status: opts.input.newStatus,
+          completedDate: calculatedCompletedAt,
         },
       });
     } catch (error) {

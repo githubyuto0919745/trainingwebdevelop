@@ -16,6 +16,10 @@ import { Permission } from '../../../security';
 export class DefaultLayout {
   readonly headerConfig: HeaderConfig<Permission> = {
     title: 'FHSS Starter App',
-    menu: [{ text: 'Home', path: '/' }],
+    menu: [
+      { text: 'Home', path: '/' },
+      { text: 'Admin', path: '/admin' },
+      { text: 'Tasks', path: '/tasks' },
+    ],
   };
 }

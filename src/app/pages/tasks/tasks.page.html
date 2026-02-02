@@ -1,0 +1,24 @@
+<section>
+  @for (tasks of taskResource.value()?.data; track tasks.id) {
+    <p>{{ tasks.title }}</p>
+    <p>{{ tasks.description }}</p>
+  }
+</section>
+
+@if (taskResource.isLoading()) {
+  <div class="shade">
+    <mat-spinner />
+  </div>
+}
+
+@if (taskResource.error()) {
+  <p>Failed to retrieve tasks. Please try again.</p>
+  <p>{{ taskResource.error()?.message }}</p>
+  <button (click)="taskResource.refresh()">Refresh</button>
+}
+
+<mat-paginator
+  [length]="taskResource.value()?.totalCount"
+  [pageSize]="pageSize"
+  (page)="handlePageEvent($event)"
+  [hidePageSize]="true" />

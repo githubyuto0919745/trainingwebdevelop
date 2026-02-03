@@ -25,7 +25,7 @@ export const routes: Routes = [
       {
         path: 'tasks',
         component: TasksPage,
-        canActivate: [permissionGuard<Permission>(['view-secret'])],
+        canActivate: [permissionGuard<Permission>(['manage-tasks'])],
       },
       { path: 'server-error', component: ServerErrorPage },
       { path: 'forbidden', component: ForbiddenPage },

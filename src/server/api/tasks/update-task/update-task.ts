@@ -13,12 +13,9 @@ const updateTaskInput = z.object({
 const updateTaskOutput = z.object({
   status: z.literal(Object.values(Status)),
   id: z.string(),
-  createdAt: z.date(),
-  updatedAt: z.date(),
   title: z.string(),
   description: z.string(),
   completedDate: z.nullable(z.date()),
-  userId: z.string(),
 });
 
 export const updateTask = authenticatedProcedure

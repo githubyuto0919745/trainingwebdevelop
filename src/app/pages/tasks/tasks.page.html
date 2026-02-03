@@ -1,7 +1,8 @@
 <section>
-  @for (tasks of taskResource.value()?.data; track tasks.id) {
-    <p>{{ tasks.title }}</p>
-    <p>{{ tasks.description }}</p>
+  @for (task of taskResource.value()?.data; track task.id) {
+    <app-task-card
+      [initialState]="task"
+      (deleted)="deleteTask()"></app-task-card>
   }
 </section>
 
@@ -22,3 +23,7 @@
   [pageSize]="pageSize"
   (page)="handlePageEvent($event)"
   [hidePageSize]="true" />
+
+<button (click)="openCreateDialog()" aria-label="Create Task" mat-fab>
+  <mat-icon>add</mat-icon>
+</button>

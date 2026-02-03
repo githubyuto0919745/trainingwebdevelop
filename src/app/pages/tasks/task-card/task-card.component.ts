@@ -1,6 +1,5 @@
 import {
   Component,
-  effect,
   inject,
   input,
   linkedSignal,
@@ -8,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { StatusMenuComponent } from '../status-menu/status-menu.component';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -18,8 +18,15 @@ import { MatFormField, MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { TRPC_CLIENT } from '../../../utils/trpc.client';
-import { Status, Task } from '../../../../../prisma/server';
-import { StatusMenuComponent } from '../status-menu/status-menu.component';
+import type { Status } from '../../../../../prisma/app';
+
+type TaskCard = {
+  id: string;
+  title: string;
+  description: string;
+  status: Status;
+  completedDate: Date | null;
+};
 
 @Component({
   selector: 'app-task-card',
@@ -36,72 +43,49 @@ import { StatusMenuComponent } from '../status-menu/status-menu.component';
   templateUrl: './task-card.component.html',
   styleUrl: './task-card.component.scss',
 })
-export class TasksCardComponent {
+export class TaskCardComponent {
   private readonly trpc = inject(TRPC_CLIENT);
   private readonly confirmation = inject(ConfirmationDialog);
 
-  readonly initialTaskValue = input.required<Task>();
-  readonly taskDeleted = output();
+  readonly initialState = input.required<TaskCard>();
+  readonly deleted = output();
 
-  protected readonly newTitle = signal('');
-  protected readonly newDescription = signal('');
-  protected readonly newStatus = signal<Status>('Incomplete');
+  protected readonly editMode = signal<boolean>(false);
+  protected readonly newTitle = linkedSignal(() => this.initialState().title);
+  protected readonly newDescription = linkedSignal(
+    () => this.initialState().description
+  );
+  protected readonly newStatus = linkedSignal<Status>(
+    () => this.initialState().status
+  );
 
-  protected readonly taskCardState = trpcResource(
+  protected readonly state = trpcResource(
     this.trpc.tasks.updateTask.mutate,
     () => ({
-      taskId: this.initialTaskValue().id,
-      // taskId: '-1', // test error responses
+      taskId: this.initialState().id,
       newTitle: this.newTitle(),
       newDescription: this.newDescription(),
       newStatus: this.newStatus(),
     }),
-    { valueComputation: () => this.initialTaskValue() }
+    { valueComputation: () => this.initialState() }
   );
 
   protected readonly deleteResource = trpcResource(
     this.trpc.tasks.deleteTask.mutate,
     () => ({
-      id: this.initialTaskValue().id,
-      // taskId: '-1', // test error responses
+      id: this.initialState().id,
     })
   );
-  taskResource: any;
-
-  constructor() {
-    effect(() => {
-      const state = this.taskCardState.value();
-      if (state) {
-        this.newTitle.set(state.title);
-        this.newDescription.set(state.description);
-        this.newStatus.set(state.status);
-      }
-    });
-  }
-
-  protected readonly editMode = linkedSignal<boolean>(
-    () => !!this.taskCardState.error()
-  );
-
-  private async update(updates: Partial<Task>) {
-    this.taskCardState.value.update(prevTask => {
-      if (prevTask === undefined) return undefined;
-      return { ...prevTask, ...updates };
-    });
-    await this.taskCardState.refresh();
-  }
 
   protected async save() {
-    await this.update({
-      title: this.newTitle(),
-      description: this.newDescription(),
-    });
-    this.toggleEditMode();
+    if (await this.state.refresh()) {
+      this.toggleEditMode();
+    }
   }
 
   protected cancel() {
-    this.newTitle.set(this.taskCardState.value()?.title ?? '');
-    this.newDescription.set(this.taskCardState.value()?.description ?? '');
+    this.newTitle.set(this.state.value()?.title ?? '');
+    this.newDescription.set(this.state.value()?.description ?? '');
     this.toggleEditMode();
   }
 
@@ -115,16 +99,11 @@ export class TasksCardComponent {
       .afterClosed()
       .subscribe(result => {
         if (result) {
-          this.deleteResource
-            .refresh()
-            .then(success => {
-              if (success) {
-                this.taskDeleted.emit();
-              }
-            })
-            .catch(() => {
-              console.warn('Cannot delete task');
-            });
+          this.deleteResource.refresh().then(success => {
+            if (success) {
+              this.deleted.emit();
+            }
+          });
         }
       });
   }

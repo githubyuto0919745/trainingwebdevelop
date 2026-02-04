@@ -1,4 +1,4 @@
-import { ByuAccountType, Prisma } from '../../prisma/client';
+import { ByuAccountType, Prisma } from '../../prisma/server';
 import { faker } from '@faker-js/faker';
 import { Permission, Role } from '../../src/security';
 

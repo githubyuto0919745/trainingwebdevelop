@@ -1,6 +1,6 @@
-import { expect, Page, test } from '@playerright/test';
+import { expect, Page, test } from '@playwright/test';
 import generateDummyUserData from '../User Helper Functions/generateDummyUserData';
-import { prisma } from '../../../../../prisma/server';
+import { Prisma, prisma } from '../../prisma/server';
 
 async function signInTestUser(page: Page): Promise<string> {
   const dummyUser = generateDummyUserData({ permissions: ['manage-tasks'] }); // don't forget to give the test user required permissions; different describe groups may use different sets.
@@ -24,14 +24,14 @@ test.describe('Task page', () => {
 });
 
 test('pagination buttons', async ({}) => {
-  const createArray: prisma.TaskCreateManyInput[] = [];
+  const createArray: Prisma.TaskCreateManyInput[] = [];
   // Create 100 tasks. With a loop like this it's easy to create as many (or as few) as needed for the test.
   for (let i = 0; i < 100; i++) {
     createArray.push({
       title: `pagination test: ${i}`,
       description: i.toString(),
       status: 'Complete',
-      userId: id,
+      userId: 'user',
     });
   }
   const tasks = await prisma.task.createManyAndReturn({ data: createArray });
